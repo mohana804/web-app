@@ -1,20 +1,16 @@
 replicaCount: 2
-
 image:
-  repository: devrevinciacrdemo.azurecr.io/go-web
-  tag: "dev"                 # CI will replace this with short SHA
+  repository: devrevinciacrDemo.azurecr.io/go-web
+  tag: "2c38260" # CI will replace this with short SHA
   pullPolicy: IfNotPresent
-
 imagePullSecrets:
   - name: acr-pull
-
 service:
-  type: NodePort             # <-- Changed from ClusterIP
+  type: NodePort # <-- Changed from ClusterIP
   port: 80
   targetPort: 8080
-
 ingress:
-  enabled: false             # <-- Disable ingress for now
+  enabled: false # <-- Disable ingress for now
   className: ""
   annotations: {}
   hosts: []
