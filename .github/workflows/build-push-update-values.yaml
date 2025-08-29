@@ -87,9 +87,7 @@ jobs:
           git add charts/go-web/values-acr.yaml
           git commit -m "chore(ci): bump image tag to ${TAG}" || echo "No changes to commit"
           git push origin HEAD:main
-        env:
-          TAG: ${{ steps.vars.outputs.TAG }}
-
+    
 
 
 
