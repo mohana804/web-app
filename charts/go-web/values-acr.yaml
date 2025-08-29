@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: devrevinciacrDemo.azurecr.io/go-web
-  tag: "bc1dd96" # CI will replace this with short SHA
+  tag: "27bdf73" # CI will replace this with short SHA
   pullPolicy: IfNotPresent
 imagePullSecrets:
   - name: acr-pull
