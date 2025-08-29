@@ -14,8 +14,8 @@ permissions:
 env:
   APP_NAME: go-web
   NAMESPACE: go-web
-  ACR_NAME: ${{ secrets.ACR_NAME }}                       # e.g. devrevinciacrDemo
-  IMAGE_REPO: ${{ secrets.ACR_NAME }}.azurecr.io/go-web   # devrevinciacrdemo.azurecr.io/go-web
+  ACR_NAME: ${{ secrets.ACR_NAME }}
+  IMAGE_REPO: ${{ secrets.ACR_NAME }}.azurecr.io/go-web
 
 jobs:
   build_push_update:
@@ -29,7 +29,22 @@ jobs:
         with:
           go-version: '1.22'
 
-      # Optional: Azure login (kept for future OIDC-only flow)
+      # ✅ Cache Go modules & build cache
+      - name: Cache Go dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+        working-directory: ./web-app
+
+      # Optional: Azure login
       - name: Login to Azure (OIDC)
         uses: azure/login@v2
         with:
@@ -38,7 +53,6 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           auth-type: service_principal
 
-      # Optional: ACR CLI login (not strictly required when using docker/login)
       - name: ACR login (CLI)
         run: az acr login -n ${{ env.ACR_NAME }}
 
@@ -48,13 +62,12 @@ jobs:
           echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           echo "IMAGE=${{ env.IMAGE_REPO }}:${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      # 🔐 Password-based push (temporary until RBAC is granted)
       - name: Docker login to ACR (admin creds)
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.REGISTRY_USERNAME }}       # e.g. devrevinciacrDemo
-          password: ${{ secrets.REGISTRY_PASSWORD }}    
-          registry: devrevinciacrDemo.azurecr.io          # from `az acr credential show`
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          registry: ${{ env.ACR_NAME }}.azurecr.io
 
       - name: Build and push image
         uses: docker/build-push-action@v6
