@@ -1,22 +1,21 @@
 replicaCount: 2
 
 image:
-  repository: YOURACR.azurecr.io/go-web
-  tag: "dev"
+  repository: devrevinciacrdemo.azurecr.io/go-web
+  tag: "dev"                 # CI will replace this with short SHA
   pullPolicy: IfNotPresent
 
+imagePullSecrets:
+  - name: acr-pull
+
 service:
-  type: ClusterIP
+  type: NodePort             # <-- Changed from ClusterIP
   port: 80
   targetPort: 8080
 
 ingress:
-  enabled: true
-  className: nginx
+  enabled: false             # <-- Disable ingress for now
+  className: ""
   annotations: {}
-  hosts:
-    - host: go-web.example.com
-      paths:
-        - path: /
-          pathType: Prefix
+  hosts: []
   tls: []
