@@ -1,0 +1,6 @@
+apiVersion: v2
+name: go-web
+description: Hello World Go web app
+version: 0.1.0
+appVersion: "1.0.0"
+type: application

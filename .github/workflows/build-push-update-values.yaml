@@ -1,0 +1,78 @@
+name: build-push-and-gitops
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'web-app/**'
+      - '.github/workflows/build-push-update-values.yaml'
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  APP_NAME: go-web
+  NAMESPACE: go-web
+  ACR_NAME: ${{ secrets.ACR_NAME }}
+  IMAGE_REPO: ${{ secrets.ACR_NAME }}.azurecr.io/go-web
+
+jobs:
+  build_push_update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login -n ${{ env.ACR_NAME }}
+
+      - name: Set image tag vars
+        id: vars
+        run: |
+          echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "IMAGE=${{ env.IMAGE_REPO }}:${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web-app
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.IMAGE }}
+            ${{ env.IMAGE_REPO }}:latest
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update Helm values with new tag
+        run: |
+          yq -i '.image.repository = strenv(IMAGE_REPO)' charts/go-web/values-acr.yaml
+          yq -i '.image.tag = strenv(TAG)' charts/go-web/values-acr.yaml
+        env:
+          IMAGE_REPO: ${{ env.IMAGE_REPO }}
+          TAG: ${{ steps.vars.outputs.TAG }}
+
+      - name: Commit and push the version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add charts/go-web/values-acr.yaml
+          git commit -m "chore(ci): bump image tag to ${TAG}"
+          git push origin HEAD:main
+        env:
+          TAG: ${{ steps.vars.outputs.TAG }}

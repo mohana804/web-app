@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: go-project
+  namespace: argocd
+spec:
+  description: Project for Go Web apps
+  sourceRepos:
+    - 'https://github.com/YOUR_ORG/go-web-app.git'
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
