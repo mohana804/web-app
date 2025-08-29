@@ -11,6 +11,10 @@ spec:
     metadata:
       labels: {{- include "go-web.selectorLabels" . | nindent 8 }}
     spec:
+      imagePullSecrets:
+        {{- with .Values.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       containers:
         - name: go-web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
