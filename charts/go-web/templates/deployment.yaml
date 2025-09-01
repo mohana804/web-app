@@ -1,27 +1,35 @@
+
+#---------Metadata Section----------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "go-web.fullname" . }}
   labels: {{- include "go-web.labels" . | nindent 4 }}
+#Spec — Replicas & Selector
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount }}. #replicas → pulled from values.yaml (.Values.replicaCount, e.g., 2 or 3).
   selector:
-    matchLabels: {{- include "go-web.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "go-web.selectorLabels" . | nindent 6 }} #selector.matchLabels → uses go-web.selectorLabels so services can select the right pods.
+    #This controls scaling (number of pods) and guarantees service-to-pod mapping.
+ #Pod Template Metadata 
   template:
     metadata:
-      labels: {{- include "go-web.selectorLabels" . | nindent 8 }}
+      labels: {{- include "go-web.selectorLabels" . | nindent 8 }} # template.metadata.labels → ensures the pod carries the same selector labels defined above.
+                                                                  #Without this, Kubernetes would fail to match service selectors.
+    #Pod Spec — Image & Secrets
     spec:
       imagePullSecrets:
         {{- with .Values.imagePullSecrets }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- end }}. #imagePullSecrets → references the secret (like acr-auth) for pulling images from ACR. 
+        #Controlled by .Values.imagePullSecrets (set in values-acr.yaml or during Helm upgrade).This is critical for private registry authentication.
       containers:
         - name: go-web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.targetPort }}
-          readinessProbe:
+          readinessProbe:   #Health checks
             httpGet:
               path: /
               port: {{ .Values.service.targetPort }}
