@@ -1,4 +1,4 @@
-package main
+vpackage main
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World from Go Web Application!000 todays check\n")
-	fmt.Fprintf(w, "Hello, World from Go Web Application checking!000........................\n")
+	fmt.Fprintf(w, "Hello, World from Go Web Application checking!000........demo version................\n")
 }
 
 func main() {
